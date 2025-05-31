@@ -48,10 +48,10 @@ function HomeContent() {
           return (
             <div
               key={screen.id}
-              className={`flex items-center justify-center ${bgColor} text-white relative overflow-hidden`}
+              className={`flex items-center justify-center ${bgColor} text-white relative overflow-hidden group`}
             >
               {/* TV Number overlay */}
-              <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold">
+              <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                 TV {screen.id}
               </div>
 
@@ -98,9 +98,9 @@ function HomeContent() {
         Admin
       </Link>
 
-      <div className="flex items-center justify-center bg-blue-500 text-white relative overflow-hidden h-full w-full">
+      <div className="flex items-center justify-center bg-blue-500 text-white relative overflow-hidden h-full w-full group">
         {/* TV Number overlay */}
-        <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold">
+        <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
           TV {selectedScreen.id}
         </div>
 
