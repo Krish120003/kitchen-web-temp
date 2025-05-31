@@ -250,12 +250,12 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
           <h1 className="text-3xl font-bold text-gray-900">
             Screen Admin Panel
           </h1>
-          <div className="flex space-x-4">
-            <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">
                 Show TV Numbers:
               </label>
@@ -273,7 +273,7 @@ export default function AdminPage() {
                 {tvNumbersConfig?.showTVNumbers ? "ON" : "OFF"}
               </button>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleTriggerReload}
                 disabled={
@@ -293,14 +293,14 @@ export default function AdminPage() {
             </div>
             <button
               onClick={() => setShowImageGallery(true)}
-              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 w-full sm:w-auto"
             >
               Manage Images
             </button>
             <button
               onClick={handleResetAllImages}
               disabled={resetAllImagesMutation.isPending}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 w-full sm:w-auto"
             >
               {resetAllImagesMutation.isPending
                 ? "..."
