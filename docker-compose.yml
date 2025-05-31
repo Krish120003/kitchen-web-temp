@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: "file:/data/db.sqlite"
+        SKIP_ENV_VALIDATION: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_URL=file:/data/db.sqlite
+      - NODE_ENV=production
+    restart: unless-stopped
+
+volumes:
+  data_volume:
+    driver: local

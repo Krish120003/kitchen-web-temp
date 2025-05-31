@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 
 interface ScreenConfig {
@@ -10,31 +10,71 @@ interface ScreenConfig {
   updatedAt: Date;
 }
 
+interface ImageFile {
+  name: string;
+  size: number;
+  lastModified: Date;
+  url: string;
+}
+
 export default function AdminPage() {
   const [screens, setScreens] = useState<ScreenConfig[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(true);
+  const [selectedScreen, setSelectedScreen] = useState<string | null>(null);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
-  const { data: screensData, refetch } = api.screen.getAll.useQuery();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: screensData, refetch: refetchScreens } =
+    api.screen.getAll.useQuery();
+  const { data: uploadedImages, refetch: refetchImages } =
+    api.images.getAll.useQuery();
+
   const updateOrderMutation = api.screen.updateOrder.useMutation({
     onSuccess: () => {
-      refetch();
+      refetchScreens();
     },
   });
+
   const updateImageMutation = api.screen.updateImage.useMutation({
     onSuccess: () => {
-      refetch();
+      refetchScreens();
+      setSelectedScreen(null);
+      setShowImageGallery(false);
     },
   });
+
   const resetImageMutation = api.screen.resetImage.useMutation({
     onSuccess: () => {
-      refetch();
+      refetchScreens();
     },
   });
+
   const resetAllImagesMutation = api.screen.resetAllImages.useMutation({
     onSuccess: () => {
-      refetch();
+      refetchScreens();
+    },
+  });
+
+  const uploadImageMutation = api.images.upload.useMutation({
+    onSuccess: () => {
+      refetchImages();
+      setUploadProgress(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    onError: () => {
+      setUploadProgress(null);
+    },
+  });
+
+  const deleteImageMutation = api.images.delete.useMutation({
+    onSuccess: () => {
+      refetchImages();
     },
   });
 
@@ -117,6 +157,62 @@ export default function AdminPage() {
     }
   };
 
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    setUploadProgress("Uploading...");
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+
+        await uploadImageMutation.mutateAsync({
+          filename: file.name,
+          data: base64Data,
+          mimeType: file.type,
+        });
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadProgress(null);
+    }
+  };
+
+  const handleSelectImage = (imageUrl: string) => {
+    if (selectedScreen) {
+      updateImageMutation.mutate({
+        id: selectedScreen,
+        imageUrl: imageUrl,
+      });
+    }
+  };
+
+  const handleDeleteImage = async (imageName: string) => {
+    if (confirm("Are you sure you want to delete this image?")) {
+      await deleteImageMutation.mutateAsync({ name: imageName });
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   const getDefaultImageUrl = (screenId: string) => {
     return `/image${screenId}.png`;
   };
@@ -130,14 +226,159 @@ export default function AdminPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Screen Admin Panel
           </h1>
-          <button
-            onClick={handleResetAllImages}
-            disabled={resetAllImagesMutation.isPending}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
-          >
-            {resetAllImagesMutation.isPending ? "..." : "Reset All to Default"}
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setShowImageGallery(true)}
+              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+            >
+              Manage Images
+            </button>
+            <button
+              onClick={handleResetAllImages}
+              disabled={resetAllImagesMutation.isPending}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+            >
+              {resetAllImagesMutation.isPending
+                ? "..."
+                : "Reset All to Default"}
+            </button>
+          </div>
         </div>
+
+        {/* Image Gallery Modal */}
+        {showImageGallery && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedScreen
+                      ? `Select Image for TV ${selectedScreen}`
+                      : "Image Gallery"}
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowImageGallery(false);
+                      setSelectedScreen(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Upload Section */}
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Upload New Image</h3>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadImageMutation.isPending}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      {uploadProgress || "Choose File"}
+                    </button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <p className="text-sm text-gray-600">
+                    Supported formats: JPG, PNG, GIF, WebP, SVG, BMP
+                  </p>
+                </div>
+              </div>
+
+              {/* Images Grid */}
+              <div className="p-6 overflow-y-auto max-h-96">
+                {uploadedImages && uploadedImages.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {uploadedImages.map((image) => (
+                      <div
+                        key={image.name}
+                        className="border rounded-lg overflow-hidden bg-white shadow-sm"
+                      >
+                        <div className="aspect-video bg-gray-100">
+                          <img
+                            src={image.url}
+                            alt={image.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder-image.png";
+                            }}
+                          />
+                        </div>
+                        <div className="p-3">
+                          <p
+                            className="text-sm font-medium text-gray-900 truncate"
+                            title={image.name}
+                          >
+                            {image.name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatFileSize(image.size)}
+                          </p>
+                          <div className="flex space-x-2 mt-3">
+                            {selectedScreen && (
+                              <button
+                                onClick={() => handleSelectImage(image.url)}
+                                className="flex-1 px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                              >
+                                Select
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteImage(image.name)}
+                              disabled={deleteImageMutation.isPending}
+                              className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <svg
+                      className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <p className="text-gray-600">No images uploaded yet</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Upload your first image to get started
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Preview Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -296,11 +537,8 @@ export default function AdminPage() {
             Screen Configuration
           </h2>
           <p className="text-gray-600 mb-6">
-            Drag screens to reorder them. Set image URLs for each screen.
-            Default images are{" "}
-            <code className="bg-gray-200 px-1 rounded">/image1.png</code>,{" "}
-            <code className="bg-gray-200 px-1 rounded">/image2.png</code>,{" "}
-            <code className="bg-gray-200 px-1 rounded">/image3.png</code>.
+            Drag screens to reorder them. Upload images and select them for each
+            screen, or use custom URLs.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -382,6 +620,19 @@ export default function AdminPage() {
                   )}
 
                   <div className="space-y-3">
+                    {/* Select from uploaded images button */}
+                    <button
+                      onClick={() => {
+                        setSelectedScreen(screen.id);
+                        setShowImageGallery(true);
+                      }}
+                      className="w-full px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
+                    >
+                      📸 Select from Gallery
+                    </button>
+
+                    <div className="text-center text-gray-500 text-xs">or</div>
+
                     <input
                       type="url"
                       value={imageUrls[screen.id] || ""}
@@ -389,7 +640,7 @@ export default function AdminPage() {
                         handleImageUrlChange(screen.id, e.target.value)
                       }
                       onKeyPress={(e) => handleKeyPress(e, screen.id)}
-                      placeholder={`Default: /image${screen.id}.png`}
+                      placeholder={`Custom URL or default: /image${screen.id}.png`}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
 
@@ -399,7 +650,7 @@ export default function AdminPage() {
                         disabled={updateImageMutation.isPending}
                         className="flex-1 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 text-sm"
                       >
-                        {updateImageMutation.isPending ? "..." : "Set Image"}
+                        {updateImageMutation.isPending ? "..." : "Set URL"}
                       </button>
                       <button
                         onClick={() => handleResetImage(screen.id)}

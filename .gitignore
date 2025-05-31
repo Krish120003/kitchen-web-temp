@@ -45,6 +45,10 @@ yarn-error.log*
 # idea files
 .idea
 
+# Local data directory (contains database and uploaded images)
+/data/
+
 # PocketBase data (contains sensitive database files and uploads)
 pocketbase/pb_data/
 pocketbase/pb_public/uploads/
+/generated/prisma
