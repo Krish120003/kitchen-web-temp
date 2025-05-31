@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [screens, setScreens] = useState<ScreenConfig[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(true);
 
   const { data: screensData, refetch } = api.screen.getAll.useQuery();
   const updateOrderMutation = api.screen.updateOrder.useMutation({
@@ -136,6 +137,158 @@ export default function AdminPage() {
           >
             {resetAllImagesMutation.isPending ? "..." : "Reset All to Default"}
           </button>
+        </div>
+
+        {/* Preview Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <button
+            onClick={() => setIsPreviewCollapsed(!isPreviewCollapsed)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h2 className="text-xl font-semibold text-gray-800">
+              Live Preview
+            </h2>
+            <svg
+              className={`w-5 h-5 text-gray-500 transform transition-transform ${
+                isPreviewCollapsed ? "" : "rotate-180"
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          {!isPreviewCollapsed && (
+            <div className="mt-4 space-y-6">
+              <p className="text-gray-600 text-sm">
+                This shows how your screens will appear in the viewer. Click any
+                preview to open in a new tab.
+              </p>
+
+              {/* All Screens View */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">
+                  All Screens View (/?)
+                </h3>
+                <div
+                  className="border rounded-lg overflow-hidden bg-gray-900"
+                  style={{ aspectRatio: "3/1" }}
+                >
+                  <div className="grid grid-cols-3 h-full">
+                    {sortedScreens.map((screen, index) => {
+                      const colors = [
+                        "bg-blue-500",
+                        "bg-green-500",
+                        "bg-red-500",
+                      ];
+                      const bgColor = colors[index] || "bg-gray-500";
+
+                      return (
+                        <a
+                          key={screen.id}
+                          href={`/?tv=${screen.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`relative ${bgColor} text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer`}
+                        >
+                          {screen.imageUrl ? (
+                            <>
+                              <img
+                                src={screen.imageUrl}
+                                alt={`Screen ${screen.id}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-30 transition-opacity">
+                                <span className="text-4xl font-bold">
+                                  {screen.id}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-4xl font-bold">
+                              {screen.id}
+                            </span>
+                          )}
+                          <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-bold">
+                            TV {screen.id}
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Individual Screen Views */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-800 mb-3">
+                  Individual Screens
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {sortedScreens.map((screen, index) => {
+                    const colors = [
+                      "bg-blue-500",
+                      "bg-green-500",
+                      "bg-red-500",
+                    ];
+                    const bgColor = colors[index] || "bg-gray-500";
+
+                    return (
+                      <div key={screen.id} className="space-y-2">
+                        <h4 className="font-medium text-gray-700">
+                          TV {screen.id} (/?tv={screen.id})
+                        </h4>
+                        <a
+                          href={`/?tv=${screen.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`block relative ${bgColor} text-white rounded overflow-hidden hover:opacity-80 transition-opacity cursor-pointer`}
+                          style={{ aspectRatio: "16/9" }}
+                        >
+                          {screen.imageUrl ? (
+                            <>
+                              <img
+                                src={screen.imageUrl}
+                                alt={`Screen ${screen.id}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-30 transition-opacity">
+                                <span className="text-3xl font-bold">
+                                  {screen.id}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-3xl font-bold">
+                                {screen.id}
+                              </span>
+                            </div>
+                          )}
+                          <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-bold">
+                            TV {screen.id}
+                          </div>
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">

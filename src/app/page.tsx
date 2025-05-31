@@ -15,7 +15,11 @@ interface ScreenConfig {
 export default function Home() {
   const [tvValue] = useQueryState("tv");
 
-  const { data: screens } = api.screen.getAll.useQuery();
+  // Poll for screen data every 15 seconds
+  const { data: screens } = api.screen.getAll.useQuery(undefined, {
+    refetchInterval: 15000,
+    refetchIntervalInBackground: true,
+  });
 
   if (!screens) {
     return (
