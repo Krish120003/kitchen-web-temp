@@ -19,3 +19,16 @@ model Tv {
 
   @@map("tv")
 }
+
+model Layout {
+  id     String  @id
+  name   String
+  tv1Url String?
+  tv2Url String?
+  tv3Url String?
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("layout")
+}

@@ -1,6 +1,7 @@
 import { postRouter } from "~/server/api/routers/post";
 import { screenRouter } from "~/server/api/routers/screen";
 import { imagesRouter } from "~/server/api/routers/images";
+import { layoutRouter } from "~/server/api/routers/layout";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -12,6 +13,7 @@ export const appRouter = createTRPCRouter({
   post: postRouter,
   screen: screenRouter,
   images: imagesRouter,
+  layout: layoutRouter,
 });
 
 // export type definition of API

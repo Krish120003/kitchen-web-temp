@@ -23,6 +23,7 @@
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
+    "nanoid": "^5.1.5",
     "next": "^15.2.3",
     "nuqs": "^2.4.3",
     "prisma": "^6.8.2",
