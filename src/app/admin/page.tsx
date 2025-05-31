@@ -175,10 +175,13 @@ export default function AdminPage() {
               {/* All Screens View */}
               <div>
                 <h3 className="text-lg font-medium text-gray-800 mb-3">
-                  All Screens View (/?)
+                  All Screens View (/)
                 </h3>
-                <div
-                  className="border rounded-lg overflow-hidden bg-gray-900"
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block border rounded-lg overflow-hidden bg-gray-900 hover:opacity-80 transition-opacity cursor-pointer"
                   style={{ aspectRatio: "3/1" }}
                 >
                   <div className="grid grid-cols-3 h-full">
@@ -191,12 +194,9 @@ export default function AdminPage() {
                       const bgColor = colors[index] || "bg-gray-500";
 
                       return (
-                        <a
+                        <div
                           key={screen.id}
-                          href={`/?tv=${screen.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`relative ${bgColor} text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer`}
+                          className={`relative ${bgColor} text-white flex items-center justify-center`}
                         >
                           {screen.imageUrl ? (
                             <>
@@ -222,11 +222,11 @@ export default function AdminPage() {
                           <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-bold">
                             TV {screen.id}
                           </div>
-                        </a>
+                        </div>
                       );
                     })}
                   </div>
-                </div>
+                </a>
               </div>
 
               {/* Individual Screen Views */}
