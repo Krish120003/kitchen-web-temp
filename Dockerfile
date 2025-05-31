@@ -59,10 +59,6 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy initialization script
-COPY scripts/init-data.sh /usr/local/bin/init-data.sh
-RUN chmod +x /usr/local/bin/init-data.sh
-
 # Create the /data directory and set appropriate permissions
 RUN mkdir -p /data/images && chown -R nextjs:nodejs /data
 
@@ -72,15 +68,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-# Create a startup script that initializes data and starts the app
-COPY --chown=nextjs:nodejs <<EOF /usr/local/bin/start.sh
-#!/bin/bash
-# Run initialization script
-/usr/local/bin/init-data.sh
-# Start the Next.js application
-exec node server.js
-EOF
-
-RUN chmod +x /usr/local/bin/start.sh
-
-CMD ["/usr/local/bin/start.sh"] 
+CMD ["node", "server.js"] 
