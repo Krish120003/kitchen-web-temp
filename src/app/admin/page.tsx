@@ -182,7 +182,7 @@ export default function AdminPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block border rounded-lg overflow-hidden bg-gray-900 hover:opacity-80 transition-opacity cursor-pointer"
-                  style={{ aspectRatio: "3/1" }}
+                  style={{ aspectRatio: "48/9" }}
                 >
                   <div className="grid grid-cols-3 h-full">
                     {sortedScreens.map((screen, index) => {
@@ -196,7 +196,7 @@ export default function AdminPage() {
                       return (
                         <div
                           key={screen.id}
-                          className={`relative ${bgColor} text-white flex items-center justify-center`}
+                          className={`relative ${bgColor} text-white flex items-center justify-center aspect-video`}
                         >
                           {screen.imageUrl ? (
                             <>
@@ -365,7 +365,7 @@ export default function AdminPage() {
                       <div className="text-sm text-gray-600 flex items-center justify-between mb-2">
                         <span>Current image:</span>
                         {screen.imageUrl === getDefaultImageUrl(screen.id) && (
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded ">
                             Default
                           </span>
                         )}
@@ -373,7 +373,7 @@ export default function AdminPage() {
                       <img
                         src={screen.imageUrl}
                         alt={`Screen ${screen.id}`}
-                        className="w-full h-32 object-cover rounded border"
+                        className="w-full h-32 object-cover rounded border aspect-video"
                         onError={(e) => {
                           e.currentTarget.style.display = "none";
                         }}

@@ -68,7 +68,27 @@ export const screenRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        imageUrl: z.string().url().nullable(),
+        imageUrl: z
+          .string()
+          .refine(
+            (val) => {
+              // Allow null/empty values
+              if (!val) return true;
+              // Allow full URLs
+              try {
+                new URL(val);
+                return true;
+              } catch {
+                // Allow relative paths starting with '/'
+                return val.startsWith("/");
+              }
+            },
+            {
+              message:
+                "Image URL must be a valid URL or a relative path starting with '/'",
+            }
+          )
+          .nullable(),
       })
     )
     .mutation(({ input }) => {

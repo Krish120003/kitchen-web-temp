@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  # PocketBase backend service
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: kitchen-pocketbase
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./pocketbase/pb_data:/pb_data
+      - ./pocketbase/pb_public:/pb_public
+      - ./pocketbase/pb_migrations:/pb_migrations
+      - ./pocketbase/pb_hooks:/pb_hooks
+    healthcheck:
+      test: wget --no-verbose --tries=3 --spider http://localhost:8090/api/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - kitchen-network
+
+  # Next.js frontend application
+  kitchen-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kitchen-web-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - POCKETBASE_URL=http://pocketbase:8090
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    networks:
+      - kitchen-network
+
+networks:
+  kitchen-network:
+    driver: bridge
+
+volumes:
+  pocketbase_data:
+    driver: local
