@@ -1,53 +1,123 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useQueryState } from "nuqs";
+import { api } from "~/trpc/react";
 
-import { LatestPost } from "~/app/_components/post";
-import { HydrateClient, api } from "~/trpc/server";
+interface ScreenConfig {
+  id: string;
+  position: number;
+  imageUrl: string | null;
+  updatedAt: Date;
+}
 
-export default async function Home() {
-	const hello = await api.post.hello({ text: "from tRPC" });
+export default function Home() {
+  const [tvValue] = useQueryState("tv");
 
-	void api.post.getLatest.prefetch();
+  const { data: screens } = api.screen.getAll.useQuery();
 
-	return (
-		<HydrateClient>
-			<main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-				<div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-					<h1 className="font-extrabold text-5xl tracking-tight sm:text-[5rem]">
-						Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-					</h1>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-						<Link
-							className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-							href="https://create.t3.gg/en/usage/first-steps"
-							target="_blank"
-						>
-							<h3 className="font-bold text-2xl">First Steps →</h3>
-							<div className="text-lg">
-								Just the basics - Everything you need to know to set up your
-								database and authentication.
-							</div>
-						</Link>
-						<Link
-							className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-							href="https://create.t3.gg/en/introduction"
-							target="_blank"
-						>
-							<h3 className="font-bold text-2xl">Documentation →</h3>
-							<div className="text-lg">
-								Learn more about Create T3 App, the libraries it uses, and how
-								to deploy it.
-							</div>
-						</Link>
-					</div>
-					<div className="flex flex-col items-center gap-2">
-						<p className="text-2xl text-white">
-							{hello ? hello.greeting : "Loading tRPC query..."}
-						</p>
-					</div>
+  if (!screens) {
+    return (
+      <main className="h-screen w-screen flex items-center justify-center bg-gray-900">
+        <div className="text-white text-2xl">Loading...</div>
+      </main>
+    );
+  }
 
-					<LatestPost />
-				</div>
-			</main>
-		</HydrateClient>
-	);
+  const sortedScreens = screens.sort((a, b) => a.position - b.position);
+
+  // If no tv param or invalid value, show all three
+  if (!tvValue || !["1", "2", "3"].includes(tvValue)) {
+    return (
+      <main className="h-screen w-screen grid grid-cols-3 grid-rows-1 relative">
+        <Link
+          href="/admin"
+          className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm opacity-0 hover:opacity-100 transition-opacity"
+        >
+          Admin
+        </Link>
+        {sortedScreens.map((screen, index) => {
+          const colors = ["bg-blue-500", "bg-green-500", "bg-red-500"];
+          const bgColor = colors[index] || "bg-gray-500";
+
+          return (
+            <div
+              key={screen.id}
+              className={`flex items-center justify-center ${bgColor} text-white relative overflow-hidden`}
+            >
+              {/* TV Number overlay */}
+              <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold">
+                TV {screen.id}
+              </div>
+
+              {screen.imageUrl ? (
+                <img
+                  src={screen.imageUrl}
+                  alt={`Screen ${screen.id}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <span className="text-8xl font-bold">{screen.id}</span>
+              )}
+
+              {/* Fallback number overlay */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-30 transition-opacity">
+                <span className="text-8xl font-bold">{screen.id}</span>
+              </div>
+            </div>
+          );
+        })}
+      </main>
+    );
+  }
+
+  // Show only the selected screen
+  const selectedScreen = sortedScreens.find((s) => s.id === tvValue);
+  if (!selectedScreen) {
+    return (
+      <main className="h-screen w-screen flex items-center justify-center bg-gray-900">
+        <div className="text-white text-2xl">Screen not found</div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="h-screen w-screen relative">
+      <Link
+        href="/admin"
+        className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm opacity-0 hover:opacity-100 transition-opacity"
+      >
+        Admin
+      </Link>
+
+      <div className="flex items-center justify-center bg-blue-500 text-white relative overflow-hidden h-full w-full">
+        {/* TV Number overlay */}
+        <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold">
+          TV {selectedScreen.id}
+        </div>
+
+        {selectedScreen.imageUrl ? (
+          <img
+            src={selectedScreen.imageUrl}
+            alt={`Screen ${selectedScreen.id}`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <span className="text-8xl font-bold">{selectedScreen.id}</span>
+        )}
+
+        {/* Fallback number overlay */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-30 transition-opacity">
+          <span className="text-8xl font-bold">{selectedScreen.id}</span>
+        </div>
+      </div>
+    </main>
+  );
 }
