@@ -1,15 +1,7 @@
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-
-// In-memory storage for screen configurations
-// In a real app, this would be stored in a database
-interface ScreenConfig {
-  id: string;
-  position: number;
-  imageUrl: string | null;
-  updatedAt: Date;
-}
+import { db } from "~/server/db";
 
 // In-memory storage for TV numbers display setting
 let showTVNumbers = false;
@@ -25,30 +17,40 @@ function getBaseUrl() {
   return "http://localhost:3000";
 }
 
-let screens: ScreenConfig[] = [
-  {
-    id: "1",
-    position: 1,
-    imageUrl: "/image1.png",
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    position: 2,
-    imageUrl: "/image2.png",
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    position: 3,
-    imageUrl: "/image3.png",
-    updatedAt: new Date(),
-  },
-];
+// Initialize TV entries if they don't exist
+async function initializeTVs() {
+  const existingTVs = await db.tv.count();
+
+  if (existingTVs === 0) {
+    // Create the initial 3 TV entries
+    await db.tv.createMany({
+      data: [
+        {
+          id: "1",
+          position: 1,
+          imageUrl: "/image1.png",
+        },
+        {
+          id: "2",
+          position: 2,
+          imageUrl: "/image2.png",
+        },
+        {
+          id: "3",
+          position: 3,
+          imageUrl: "/image3.png",
+        },
+      ],
+    });
+  }
+}
 
 export const screenRouter = createTRPCRouter({
-  getAll: publicProcedure.query(() => {
-    return screens.sort((a, b) => a.position - b.position);
+  getAll: publicProcedure.query(async () => {
+    await initializeTVs();
+    return await db.tv.findMany({
+      orderBy: { position: "asc" },
+    });
   }),
 
   updateOrder: publicProcedure
@@ -60,15 +62,20 @@ export const screenRouter = createTRPCRouter({
         })
       )
     )
-    .mutation(({ input }) => {
-      for (const update of input) {
-        const screen = screens.find((s) => s.id === update.id);
-        if (screen) {
-          screen.position = update.position;
-          screen.updatedAt = new Date();
-        }
-      }
-      return screens.sort((a, b) => a.position - b.position);
+    .mutation(async ({ input }) => {
+      // Update positions using transactions for consistency
+      await db.$transaction(
+        input.map((update) =>
+          db.tv.update({
+            where: { id: update.id },
+            data: { position: update.position },
+          })
+        )
+      );
+
+      return await db.tv.findMany({
+        orderBy: { position: "asc" },
+      });
     }),
 
   updateImage: publicProcedure
@@ -98,38 +105,62 @@ export const screenRouter = createTRPCRouter({
           .nullable(),
       })
     )
-    .mutation(({ input }) => {
-      const screen = screens.find((s) => s.id === input.id);
-      if (screen) {
-        screen.imageUrl = input.imageUrl;
-        screen.updatedAt = new Date();
-      }
-      return screen;
+    .mutation(async ({ input }) => {
+      return await db.tv.update({
+        where: { id: input.id },
+        data: { imageUrl: input.imageUrl },
+      });
     }),
 
   resetImage: publicProcedure
     .input(z.object({ id: z.string() }))
-    .mutation(({ input }) => {
-      const screen = screens.find((s) => s.id === input.id);
-      if (screen) {
-        screen.imageUrl = `/image${screen.id}.png`;
-        screen.updatedAt = new Date();
-      }
-      return screen;
+    .mutation(async ({ input }) => {
+      return await db.tv.update({
+        where: { id: input.id },
+        data: { imageUrl: `/image${input.id}.png` },
+      });
     }),
 
-  resetAllImages: publicProcedure.mutation(() => {
-    screens.forEach((screen) => {
-      screen.imageUrl = `/image${screen.id}.png`;
-      screen.updatedAt = new Date();
+  resetAllImages: publicProcedure.mutation(async () => {
+    // Update all TVs to their default images
+    await db.tv.updateMany({
+      data: {}, // Empty data object to trigger updatedAt
     });
-    return screens.sort((a, b) => a.position - b.position);
+
+    // Update each TV with its specific default image
+    await db.$transaction([
+      db.tv.update({
+        where: { id: "1" },
+        data: { imageUrl: "/image1.png" },
+      }),
+      db.tv.update({
+        where: { id: "2" },
+        data: { imageUrl: "/image2.png" },
+      }),
+      db.tv.update({
+        where: { id: "3" },
+        data: { imageUrl: "/image3.png" },
+      }),
+    ]);
+
+    return await db.tv.findMany({
+      orderBy: { position: "asc" },
+    });
   }),
 
-  getUpdates: publicProcedure.input(z.date().optional()).query(({ input }) => {
-    const lastCheck = input || new Date(0);
-    return screens.filter((screen) => screen.updatedAt > lastCheck);
-  }),
+  getUpdates: publicProcedure
+    .input(z.date().optional())
+    .query(async ({ input }) => {
+      const lastCheck = input || new Date(0);
+      return await db.tv.findMany({
+        where: {
+          updatedAt: {
+            gt: lastCheck,
+          },
+        },
+        orderBy: { position: "asc" },
+      });
+    }),
 
   // TV Numbers Control
   setShowTVNumbers: publicProcedure
