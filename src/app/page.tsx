@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useQueryState } from "nuqs";
 import { api } from "~/trpc/react";
@@ -12,7 +12,7 @@ interface ScreenConfig {
   updatedAt: Date;
 }
 
-export default function Home() {
+function HomeContent() {
   const [tvValue] = useQueryState("tv");
 
   // Poll for screen data every 15 seconds
@@ -123,5 +123,19 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <main className="h-screen w-screen flex items-center justify-center bg-gray-900">
+          <div className="text-white text-2xl">Loading...</div>
+        </main>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

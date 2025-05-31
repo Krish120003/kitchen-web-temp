@@ -28,10 +28,10 @@ function isImageFile(filename: string): boolean {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const { filename } = params;
+    const { filename } = await params;
 
     // Security check: ensure the filename doesn't contain path traversal
     if (
