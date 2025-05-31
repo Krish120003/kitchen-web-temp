@@ -14,6 +14,10 @@ interface ScreenConfig {
 // In-memory storage for TV numbers display setting
 let showTVNumbers = false;
 
+// In-memory storage for trigger reload functionality
+let triggerReload = false;
+let triggerReloadTimeout: NodeJS.Timeout | null = null;
+
 // Helper function to get base URL (in production, this would be more sophisticated)
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin;
@@ -137,5 +141,37 @@ export const screenRouter = createTRPCRouter({
 
   getShowTVNumbers: publicProcedure.query(() => {
     return { showTVNumbers };
+  }),
+
+  // Trigger Reload Control
+  setTriggerReload: publicProcedure
+    .input(z.object({ trigger: z.boolean() }))
+    .mutation(({ input }) => {
+      triggerReload = input.trigger;
+
+      // If setting to true, set timeout to revert back to false after 5 seconds
+      if (input.trigger) {
+        // Clear any existing timeout
+        if (triggerReloadTimeout) {
+          clearTimeout(triggerReloadTimeout);
+        }
+
+        triggerReloadTimeout = setTimeout(() => {
+          triggerReload = false;
+          triggerReloadTimeout = null;
+        }, 5000); // 5 seconds
+      } else {
+        // If manually setting to false, clear any existing timeout
+        if (triggerReloadTimeout) {
+          clearTimeout(triggerReloadTimeout);
+          triggerReloadTimeout = null;
+        }
+      }
+
+      return { triggerReload };
+    }),
+
+  getTriggerReload: publicProcedure.query(() => {
+    return { triggerReload };
   }),
 });

@@ -41,6 +41,14 @@ export default function AdminPage() {
     }
   );
 
+  // Trigger Reload Control
+  const { data: triggerReloadConfig } = api.screen.getTriggerReload.useQuery(
+    undefined,
+    {
+      refetchInterval: 2000, // Refresh every 2 seconds in admin
+    }
+  );
+
   const updateOrderMutation = api.screen.updateOrder.useMutation({
     onSuccess: () => {
       refetchScreens();
@@ -68,6 +76,8 @@ export default function AdminPage() {
   });
 
   const setShowTVNumbersMutation = api.screen.setShowTVNumbers.useMutation();
+
+  const setTriggerReloadMutation = api.screen.setTriggerReload.useMutation();
 
   const uploadImageMutation = api.images.upload.useMutation({
     onSuccess: () => {
@@ -101,6 +111,10 @@ export default function AdminPage() {
 
   const handleToggleTVNumbers = (show: boolean) => {
     setShowTVNumbersMutation.mutate({ show });
+  };
+
+  const handleTriggerReload = () => {
+    setTriggerReloadMutation.mutate({ trigger: true });
   };
 
   const handleDragStart = (e: React.DragEvent, screenId: string) => {
@@ -257,6 +271,24 @@ export default function AdminPage() {
                 }`}
               >
                 {tvNumbersConfig?.showTVNumbers ? "ON" : "OFF"}
+              </button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleTriggerReload}
+                disabled={
+                  setTriggerReloadMutation.isPending ||
+                  triggerReloadConfig?.triggerReload
+                }
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
+                  triggerReloadConfig?.triggerReload
+                    ? "bg-green-500 text-white"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                }`}
+              >
+                {triggerReloadConfig?.triggerReload
+                  ? "RELOAD ACTIVE"
+                  : "Trigger Reload"}
               </button>
             </div>
             <button

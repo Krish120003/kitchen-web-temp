@@ -30,7 +30,23 @@ function HomeContent() {
     }
   );
 
+  // Poll for trigger reload setting every 2 seconds
+  const { data: triggerReloadConfig } = api.screen.getTriggerReload.useQuery(
+    undefined,
+    {
+      refetchInterval: 2000,
+      refetchIntervalInBackground: true,
+    }
+  );
+
   const showTVNumbers = tvNumbersConfig?.showTVNumbers || false;
+
+  // Handle trigger reload functionality
+  useEffect(() => {
+    if (triggerReloadConfig?.triggerReload) {
+      window.location.reload();
+    }
+  }, [triggerReloadConfig?.triggerReload]);
 
   if (!screens) {
     return (
