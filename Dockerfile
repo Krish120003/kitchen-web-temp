@@ -35,6 +35,9 @@ COPY . .
 
 RUN corepack enable pnpm && SKIP_ENV_VALIDATION=1 pnpm run build
 
+# Generate Prisma client after build
+RUN corepack enable pnpm && pnpm exec prisma generate
+
 ########################
 #        RUNNER        #
 ########################
@@ -59,6 +62,22 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy Prisma files and migrations for running migrations at startup
+COPY --from=builder /app/prisma ./prisma
+
+# Install required dependencies for Prisma in production
+RUN corepack enable pnpm
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN pnpm add prisma @prisma/client --prod
+
+# Generate Prisma client
+RUN pnpm exec prisma generate
+
+# Copy startup script
+COPY start.sh ./
+RUN chmod +x start.sh
+
 # Create the /data directory and set appropriate permissions
 RUN mkdir -p /data/images && chown -R nextjs:nodejs /data
 
@@ -68,4 +87,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-CMD ["node", "server.js"] 
+CMD ["./start.sh"] 
