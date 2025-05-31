@@ -33,6 +33,14 @@ export default function AdminPage() {
   const { data: uploadedImages, refetch: refetchImages } =
     api.images.getAll.useQuery();
 
+  // TV Numbers Control
+  const { data: tvNumbersConfig } = api.screen.getShowTVNumbers.useQuery(
+    undefined,
+    {
+      refetchInterval: 2000, // Refresh every 2 seconds in admin
+    }
+  );
+
   const updateOrderMutation = api.screen.updateOrder.useMutation({
     onSuccess: () => {
       refetchScreens();
@@ -58,6 +66,8 @@ export default function AdminPage() {
       refetchScreens();
     },
   });
+
+  const setShowTVNumbersMutation = api.screen.setShowTVNumbers.useMutation();
 
   const uploadImageMutation = api.images.upload.useMutation({
     onSuccess: () => {
@@ -88,6 +98,10 @@ export default function AdminPage() {
       setImageUrls(urls);
     }
   }, [screensData]);
+
+  const handleToggleTVNumbers = (show: boolean) => {
+    setShowTVNumbersMutation.mutate({ show });
+  };
 
   const handleDragStart = (e: React.DragEvent, screenId: string) => {
     setDraggedItem(screenId);
@@ -227,6 +241,24 @@ export default function AdminPage() {
             Screen Admin Panel
           </h1>
           <div className="flex space-x-4">
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">
+                Show TV Numbers:
+              </label>
+              <button
+                onClick={() =>
+                  handleToggleTVNumbers(!tvNumbersConfig?.showTVNumbers)
+                }
+                disabled={setShowTVNumbersMutation.isPending}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
+                  tvNumbersConfig?.showTVNumbers
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                {tvNumbersConfig?.showTVNumbers ? "ON" : "OFF"}
+              </button>
+            </div>
             <button
               onClick={() => setShowImageGallery(true)}
               className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"

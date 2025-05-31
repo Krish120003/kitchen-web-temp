@@ -11,6 +11,9 @@ interface ScreenConfig {
   updatedAt: Date;
 }
 
+// In-memory storage for TV numbers display setting
+let showTVNumbers = false;
+
 // Helper function to get base URL (in production, this would be more sophisticated)
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin;
@@ -122,5 +125,17 @@ export const screenRouter = createTRPCRouter({
   getUpdates: publicProcedure.input(z.date().optional()).query(({ input }) => {
     const lastCheck = input || new Date(0);
     return screens.filter((screen) => screen.updatedAt > lastCheck);
+  }),
+
+  // TV Numbers Control
+  setShowTVNumbers: publicProcedure
+    .input(z.object({ show: z.boolean() }))
+    .mutation(({ input }) => {
+      showTVNumbers = input.show;
+      return { showTVNumbers };
+    }),
+
+  getShowTVNumbers: publicProcedure.query(() => {
+    return { showTVNumbers };
   }),
 });

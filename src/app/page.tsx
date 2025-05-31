@@ -17,9 +17,20 @@ function HomeContent() {
 
   // Poll for screen data every 15 seconds
   const { data: screens } = api.screen.getAll.useQuery(undefined, {
-    refetchInterval: 15000,
+    refetchInterval: 1000,
     refetchIntervalInBackground: true,
   });
+
+  // Poll for TV numbers display setting every 1 second
+  const { data: tvNumbersConfig } = api.screen.getShowTVNumbers.useQuery(
+    undefined,
+    {
+      refetchInterval: 1000,
+      refetchIntervalInBackground: true,
+    }
+  );
+
+  const showTVNumbers = tvNumbersConfig?.showTVNumbers || false;
 
   if (!screens) {
     return (
@@ -51,7 +62,13 @@ function HomeContent() {
               className={`flex items-center justify-center ${bgColor} text-white relative overflow-hidden group`}
             >
               {/* TV Number overlay */}
-              <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                className={`absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold transition-opacity ${
+                  showTVNumbers
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
+                }`}
+              >
                 TV {screen.id}
               </div>
 
@@ -69,7 +86,11 @@ function HomeContent() {
               )}
 
               {/* Fallback number overlay */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-30 transition-opacity">
+              <div
+                className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-opacity ${
+                  showTVNumbers ? "opacity-100" : "opacity-0 hover:opacity-100"
+                }`}
+              >
                 <span className="text-8xl font-bold">{screen.id}</span>
               </div>
             </div>
@@ -100,7 +121,11 @@ function HomeContent() {
 
       <div className="flex items-center justify-center bg-blue-500 text-white relative overflow-hidden h-full w-full group">
         {/* TV Number overlay */}
-        <div className="absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+        <div
+          className={`absolute top-4 left-4 z-10 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-bold transition-opacity ${
+            showTVNumbers ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
           TV {selectedScreen.id}
         </div>
 
@@ -118,7 +143,11 @@ function HomeContent() {
         )}
 
         {/* Fallback number overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-30 transition-opacity">
+        <div
+          className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 transition-opacity ${
+            showTVNumbers ? "opacity-100" : "opacity-0 hover:opacity-100"
+          }`}
+        >
           <span className="text-8xl font-bold">{selectedScreen.id}</span>
         </div>
       </div>
