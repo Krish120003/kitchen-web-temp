@@ -1,0 +1,13 @@
+services:
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY:-username/kitchen-web}:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_URL=file:/data/db.sqlite
+      - NODE_ENV=production
+    restart: unless-stopped
+    # Uncomment the line below if you want to always pull the latest image
+    # pull_policy: always
